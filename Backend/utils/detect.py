@@ -7,8 +7,7 @@ from utils.image_processing import preprocess_image
 
 def detect_rooftops_with_solar_potential(image_path, model_path, conf_threshold=0.5, color_opacity=0.7,
                                          display_original=True, panel_efficiency=0.20,
-                                         solar_radiation=1445, performance_ratio=0.75,
-                                         total_area_size=80*80):
+                                         solar_radiation=1445, performance_ratio=0.75):
     """
     Detect individual rooftops in an image, display masked areas with different colors,
     calculate percentage of image covered by each rooftop, and calculate solar potential.
@@ -22,7 +21,6 @@ def detect_rooftops_with_solar_potential(image_path, model_path, conf_threshold=
         panel_efficiency (float): Solar panel yield/efficiency (default: 20%)
         solar_radiation (float): Annual average solar radiation on tilted panels (kWh/m²/year)
         performance_ratio (float): Performance ratio, coefficient for losses (range 0.5 to 0.9)
-        total_area_size (float): Total area size in m² (default: 80m x 80m = 6400m²)
 
     Returns:
         dict: Dictionary containing total coverage and individual rooftop information with solar potential
@@ -35,12 +33,11 @@ def detect_rooftops_with_solar_potential(image_path, model_path, conf_threshold=
     # Convert from BGR to RGB for display
     original_rgb = cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
 
+    gsd = 0.12 # meters/pixel (Average value for around 115 meters zoom in India)
     height, width = original_image.shape[:2]
-    image_area = height * width
-
-    # Calculate the scale factor for converting pixels to actual area (m²)
-    scale_factor = total_area_size / image_area
-
+    image_pixels = height * width
+    image_area = height * width * gsd * gsd
+    
     processed_image = preprocess_image(original_image, sharpen_method='unsharp_mask', amount=1.5)
 
     model = YOLO(model_path)
@@ -102,10 +99,11 @@ def detect_rooftops_with_solar_potential(image_path, model_path, conf_threshold=
 
             # Pixel area and percentage
             mask_area_pixels = np.sum(mask)
-            percentage = (mask_area_pixels / image_area) * 100
+            percentage = (mask_area_pixels / image_pixels) * 100
 
             # Actual area in m²
-            area_m2 = mask_area_pixels * scale_factor
+            area_m2 = (percentage / 100) * image_area
+
 
             # Solar potential for this rooftop
             # E = A * r * H * PR
@@ -193,6 +191,7 @@ def detect_rooftops_with_solar_potential(image_path, model_path, conf_threshold=
                   label=f"Rooftop {rooftop['id']}: {rooftop['percentage']:.2f}% - {rooftop['area_m2']:.2f}m²")
         )
 
+    
     legend_elements.append(
         Patch(facecolor='none', edgecolor='none',
               label=f"Total Coverage: {total_coverage:.2f}%")
@@ -201,6 +200,7 @@ def detect_rooftops_with_solar_potential(image_path, model_path, conf_threshold=
         Patch(facecolor='none', edgecolor='none',
               label=f"Total Energy Potential: {total_energy_potential:.2f} kWh/year")
     )
+
 
     if rooftops:
         plt.legend(handles=legend_elements, loc='upper right', fontsize='medium',
@@ -219,9 +219,9 @@ def detect_rooftops_with_solar_potential(image_path, model_path, conf_threshold=
         f.write(f"Rooftop Detection and Solar Potential Analysis Report\n")
         f.write(f"=================================================\n\n")
         f.write(f"Image analyzed: {image_path}\n")
-        f.write(f"Total area size: {total_area_size} m² (80m x 80m)\n")
+        f.write(f"Total area size: {image_area} m² \n")
         f.write(f"Total rooftop coverage: {total_coverage:.2f}%\n")
-        f.write(f"Total available solar panel area: {total_coverage * total_area_size / 100:.2f} m²\n")
+        f.write(f"Total available solar panel area: {total_coverage * image_area / 100:.2f} m²\n")
         f.write(f"Solar panel efficiency used: {panel_efficiency*100}%\n")
         f.write(f"Annual average solar radiation: {solar_radiation} kWh/m²/year\n")
         f.write(f"Performance ratio used: {performance_ratio}\n\n")
