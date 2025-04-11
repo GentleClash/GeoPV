@@ -110,11 +110,11 @@ def detect_rooftops_with_solar_potential(image_path, model_path, conf_threshold=
             energy_potential = area_m2 * panel_efficiency * solar_radiation * performance_ratio
 
             # Number of standard solar panels that could be installed
-            standard_panel_size = 1.7  # m²
-            potential_panel_count = int(area_m2 / standard_panel_size)
+            # standard_panel_size = 1.7  # m²
+            # potential_panel_count = int(area_m2 / standard_panel_size)
 
             # CO2 emissions saved (based on average grid emissions)
-            co2_saved = energy_potential * 0.5  # kg CO2 (assuming 0.5 kg CO2 per kWh)
+            # co2_saved = energy_potential * 0.5  # kg CO2 (assuming 0.5 kg CO2 per kWh)
 
             total_coverage += percentage
             total_energy_potential += energy_potential
@@ -125,8 +125,8 @@ def detect_rooftops_with_solar_potential(image_path, model_path, conf_threshold=
                 'area_pixels': mask_area_pixels,
                 'area_m2': area_m2,
                 'energy_potential_kwh_per_year': energy_potential,
-                'potential_panel_count': potential_panel_count,
-                'co2_saved_kg_per_year': co2_saved
+                # 'potential_panel_count': potential_panel_count,
+                # 'co2_saved_kg_per_year': co2_saved
             }
             rooftops.append(rooftop_info)
 
@@ -228,7 +228,6 @@ def detect_rooftops_with_solar_potential(image_path, model_path, conf_threshold=
 
         f.write(f"Summary Results:\n")
         f.write(f"- Total potential annual energy generation: {total_energy_potential:.2f} kWh/year\n")
-        f.write(f"- Equivalent to powering approximately {(total_energy_potential/3500):.1f} homes\n\n")
 
         f.write(f"Individual Rooftop Analysis:\n")
         f.write(f"---------------------------\n")
@@ -237,8 +236,6 @@ def detect_rooftops_with_solar_potential(image_path, model_path, conf_threshold=
             f.write(f"- Coverage: {rooftop['percentage']:.2f}% of the image\n")
             f.write(f"- Area: {rooftop['area_m2']:.2f} m²\n")
             f.write(f"- Energy potential: {rooftop['energy_potential_kwh_per_year']:.2f} kWh/year\n")
-            f.write(f"- Potential solar panels: {rooftop['potential_panel_count']} standard panels\n")
-            f.write(f"- CO2 savings: {rooftop['co2_saved_kg_per_year']:.2f} kg/year\n")
 
     return {
         'total_coverage_percentage': float(total_coverage),
@@ -250,8 +247,6 @@ def detect_rooftops_with_solar_potential(image_path, model_path, conf_threshold=
                 'area_pixels': float(rooftop['area_pixels']),
                 'area_m2': float(rooftop['area_m2']),
                 'energy_potential_kwh_per_year': float(rooftop['energy_potential_kwh_per_year']),
-                'potential_panel_count': int(rooftop['potential_panel_count']),
-                'co2_saved_kg_per_year': float(rooftop['co2_saved_kg_per_year'])
             } for rooftop in rooftops
         ]
     }
