@@ -109,13 +109,6 @@ def detect_rooftops_with_solar_potential(image_path, model_path, conf_threshold=
             # E = A * r * H * PR
             energy_potential = area_m2 * panel_efficiency * solar_radiation * performance_ratio
 
-            # Number of standard solar panels that could be installed
-            # standard_panel_size = 1.7  # m²
-            # potential_panel_count = int(area_m2 / standard_panel_size)
-
-            # CO2 emissions saved (based on average grid emissions)
-            # co2_saved = energy_potential * 0.5  # kg CO2 (assuming 0.5 kg CO2 per kWh)
-
             total_coverage += percentage
             total_energy_potential += energy_potential
 
@@ -125,8 +118,6 @@ def detect_rooftops_with_solar_potential(image_path, model_path, conf_threshold=
                 'area_pixels': mask_area_pixels,
                 'area_m2': area_m2,
                 'energy_potential_kwh_per_year': energy_potential,
-                # 'potential_panel_count': potential_panel_count,
-                # 'co2_saved_kg_per_year': co2_saved
             }
             rooftops.append(rooftop_info)
 
