@@ -351,7 +351,7 @@ const SolarRooftopDetector = () => {
             GeoPV
           </div>
           <div className="text-lg text-white font-light">
-            A Solar Rooftop Potential Analyzer
+            A solar potential analyzer for Indian rooftops.
           </div>
         </h1>
       </div>
