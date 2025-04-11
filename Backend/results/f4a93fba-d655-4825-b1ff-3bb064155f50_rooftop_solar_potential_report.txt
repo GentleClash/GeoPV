@@ -1,0 +1,70 @@
+Rooftop Detection and Solar Potential Analysis Report
+=================================================
+
+Image analyzed: temp/f4a93fba-d655-4825-b1ff-3bb064155f50_sample.png
+Total area size: 4995.648 m² 
+Total rooftop coverage: 30.40%
+Total available solar panel area: 1518.49 m²
+Solar panel efficiency used: 20.0%
+Annual average solar radiation: 1445 kWh/m²/year
+Performance ratio used: 0.75
+
+Summary Results:
+- Total potential annual energy generation: 329133.69 kWh/year
+Individual Rooftop Analysis:
+---------------------------
+
+Rooftop 1:
+- Coverage: 3.80% of the image
+- Area: 189.73 m²
+- Energy potential: 41124.93 kWh/year
+
+Rooftop 2:
+- Coverage: 3.55% of the image
+- Area: 177.45 m²
+- Energy potential: 38462.55 kWh/year
+
+Rooftop 3:
+- Coverage: 3.74% of the image
+- Area: 187.00 m²
+- Energy potential: 40531.91 kWh/year
+
+Rooftop 4:
+- Coverage: 2.91% of the image
+- Area: 145.58 m²
+- Energy potential: 31555.33 kWh/year
+
+Rooftop 5:
+- Coverage: 3.78% of the image
+- Area: 188.64 m²
+- Energy potential: 40887.72 kWh/year
+
+Rooftop 6:
+- Coverage: 3.83% of the image
+- Area: 191.53 m²
+- Energy potential: 41515.08 kWh/year
+
+Rooftop 7:
+- Coverage: 2.53% of the image
+- Area: 126.32 m²
+- Energy potential: 27379.17 kWh/year
+
+Rooftop 8:
+- Coverage: 3.27% of the image
+- Area: 163.48 m²
+- Energy potential: 35434.98 kWh/year
+
+Rooftop 9:
+- Coverage: 1.02% of the image
+- Area: 50.96 m²
+- Energy potential: 11045.93 kWh/year
+
+Rooftop 10:
+- Coverage: 0.89% of the image
+- Area: 44.52 m²
+- Energy potential: 9650.75 kWh/year
+
+Rooftop 11:
+- Coverage: 1.07% of the image
+- Area: 53.27 m²
+- Energy potential: 11545.32 kWh/year

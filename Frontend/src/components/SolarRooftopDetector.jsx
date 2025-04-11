@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { X, Map, Search, Upload, Camera } from 'lucide-react';
 import sampleImage from '../assets/sample.png'
@@ -250,12 +250,33 @@ const RooftopDetails = ({ rooftops }) => (
 );
 
 // Loading Spinner Component
-const LoadingSpinner = () => (
+const LoadingSpinner = ({ message }) => (
   <div className="text-center py-6">
     <div className="animate-spin inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
-    <p className="mt-2 text-blue-600">Analyzing image...</p>
+    <p className="mt-2 text-blue-600">{message || 'Analyzing image...'}</p>
   </div>
 );
+
+// Job Progress Component
+const JobProgress = ({ status, position }) => {
+  let statusMessage = "Processing image...";
+  
+  if (position !== undefined) {
+    statusMessage = `Processing image... (Position in queue: ${position})`;
+  }
+  
+  return (
+    <div className="mt-4 p-4 bg-blue-50 text-blue-800 rounded-lg border border-blue-200">
+      <div className="flex flex-col items-center gap-2">
+        <LoadingSpinner message={statusMessage} />
+        <div className="w-full bg-blue-200 rounded-full h-2.5">
+          <div className="bg-blue-600 h-2.5 rounded-full animate-pulse w-3/4"></div>
+        </div>
+        <p className="text-sm text-blue-600">This may take up to a minute depending on image complexity</p>
+      </div>
+    </div>
+  );
+};
 
 // Error Display Component
 const ErrorDisplay = ({ message }) => (
@@ -285,12 +306,74 @@ const SolarRooftopDetector = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [fullScreenImage, setFullScreenImage] = useState(null);
+  const [jobId, setJobId] = useState(null);
+  const [jobStatus, setJobStatus] = useState(null);
+  const [pollingInterval, setPollingInterval] = useState(null);
+
+  // Function to check job status
+  const checkJobStatus = async (id) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/job_status/${id}`);
+      const statusData = response.data;
+      
+      setJobStatus(statusData);
+      
+      // If job completed, fetch results
+      if (statusData.status === 'completed') {
+        clearInterval(pollingInterval);
+        setPollingInterval(null);
+        
+        // Get image as blob
+        const imageResponse = await axios.get(`http://localhost:5000/get_result_image/${id}`, {
+          responseType: 'blob'
+        });
+        
+        // Get report as text
+        const reportResponse = await axios.get(`http://localhost:5000/get_report/${id}`, {
+          responseType: 'text'
+        });
+        
+        setAnalysisResult({
+          analysis: statusData,  // The analysis data is now included in the status response
+          imageUrl: URL.createObjectURL(imageResponse.data),
+          report: reportResponse.data
+        });
+        
+        setIsLoading(false);
+      } 
+      // If job failed, show error
+      else if (statusData.status === 'failed' || statusData.status === 'error') {
+        clearInterval(pollingInterval);
+        setPollingInterval(null);
+        setError(statusData.error || 'Analysis failed');
+        setIsLoading(false);
+      }
+      // Otherwise continue polling
+    } catch (err) {
+      console.error("Error checking job status:", err);
+      setError("Error checking job status. Please try again.");
+      clearInterval(pollingInterval);
+      setPollingInterval(null);
+      setIsLoading(false);
+    }
+  };
+
+  // Clean up polling on component unmount
+  useEffect(() => {
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [pollingInterval]);
 
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
     setSelectedFile(file);
     setAnalysisResult(null);
     setError(null);
+    setJobId(null);
+    setJobStatus(null);
   };
 
   const handleUpload = async () => {
@@ -304,33 +387,38 @@ const SolarRooftopDetector = () => {
 
     setIsLoading(true);
     setError(null);
+    setJobId(null);
+    setJobStatus(null);
 
     try {
+      // Submit job
       const response = await axios.post('http://localhost:5000/detect_rooftops', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
 
-      // Fetch the result image
-      const imageResponse = await axios.get('http://localhost:5000/get_result_image', {
-        responseType: 'blob'
-      });
-
-      // Fetch the report
-      const reportResponse = await axios.get('http://localhost:5000/get_report', {
-        responseType: 'text'
-      });
-
-      setAnalysisResult({
-        analysis: response.data.analysis,
-        imageUrl: URL.createObjectURL(imageResponse.data),
-        report: reportResponse.data
-      });
+      // Get job ID from response
+      const id = response.data.job_id;
+      setJobId(id);
+      
+      // Start polling for job status
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+      
+      const interval = setInterval(() => {
+        checkJobStatus(id);
+      }, 2000); // Poll every 2 seconds
+      
+      setPollingInterval(interval);
+      
+      // Also check immediately
+      checkJobStatus(id);
+      
     } catch (err) {
       setError(err.response?.data?.error || 'An error occurred during upload');
       console.error(err);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -397,9 +485,19 @@ const SolarRooftopDetector = () => {
         </button>
 
         {error && <ErrorDisplay message={error} />}
-        {isLoading && <LoadingSpinner />}
-
         
+        {/* Show job progress when job is processing */}
+        {isLoading && jobStatus && jobStatus.status === 'processing' && (
+          <JobProgress 
+            status={jobStatus.status} 
+            position={jobStatus.position_in_queue} 
+          />
+        )}
+        
+        {/* Show simple loading spinner when initiating job */}
+        {isLoading && (!jobStatus || !jobId) && (
+          <LoadingSpinner message="Submitting job..." />
+        )}
       </OptionsSection>
 
       {/* Step 3: View Results */}

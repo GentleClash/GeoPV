@@ -1,0 +1,100 @@
+Rooftop Detection and Solar Potential Analysis Report
+=================================================
+
+Image analyzed: temp/59157e90-7f12-41a9-9f3e-57a045570874_Screenshot from 2025-03-25 02-11-50.png
+Total area size: 5851.9583999999995 m² 
+Total rooftop coverage: 35.39%
+Total available solar panel area: 2071.22 m²
+Solar panel efficiency used: 20.0%
+Annual average solar radiation: 1445 kWh/m²/year
+Performance ratio used: 0.75
+
+Summary Results:
+- Total potential annual energy generation: 448937.81 kWh/year
+Individual Rooftop Analysis:
+---------------------------
+
+Rooftop 1:
+- Coverage: 3.17% of the image
+- Area: 185.47 m²
+- Energy potential: 40201.06 kWh/year
+
+Rooftop 2:
+- Coverage: 3.97% of the image
+- Area: 232.39 m²
+- Energy potential: 50369.93 kWh/year
+
+Rooftop 3:
+- Coverage: 2.13% of the image
+- Area: 124.63 m²
+- Energy potential: 27013.99 kWh/year
+
+Rooftop 4:
+- Coverage: 2.80% of the image
+- Area: 163.79 m²
+- Energy potential: 35500.53 kWh/year
+
+Rooftop 5:
+- Coverage: 3.29% of the image
+- Area: 192.57 m²
+- Energy potential: 41739.81 kWh/year
+
+Rooftop 6:
+- Coverage: 2.67% of the image
+- Area: 156.48 m²
+- Energy potential: 33918.08 kWh/year
+
+Rooftop 7:
+- Coverage: 1.21% of the image
+- Area: 70.56 m²
+- Energy potential: 15293.88 kWh/year
+
+Rooftop 8:
+- Coverage: 1.72% of the image
+- Area: 100.43 m²
+- Energy potential: 21767.25 kWh/year
+
+Rooftop 9:
+- Coverage: 2.90% of the image
+- Area: 169.92 m²
+- Energy potential: 36830.16 kWh/year
+
+Rooftop 10:
+- Coverage: 1.60% of the image
+- Area: 93.77 m²
+- Energy potential: 20325.25 kWh/year
+
+Rooftop 11:
+- Coverage: 1.34% of the image
+- Area: 78.32 m²
+- Energy potential: 16976.21 kWh/year
+
+Rooftop 12:
+- Coverage: 1.25% of the image
+- Area: 72.91 m²
+- Energy potential: 15802.63 kWh/year
+
+Rooftop 13:
+- Coverage: 2.20% of the image
+- Area: 129.01 m²
+- Energy potential: 27962.83 kWh/year
+
+Rooftop 14:
+- Coverage: 0.78% of the image
+- Area: 45.56 m²
+- Energy potential: 9875.48 kWh/year
+
+Rooftop 15:
+- Coverage: 2.66% of the image
+- Area: 155.39 m²
+- Energy potential: 33680.87 kWh/year
+
+Rooftop 16:
+- Coverage: 0.44% of the image
+- Area: 25.75 m²
+- Energy potential: 5580.71 kWh/year
+
+Rooftop 17:
+- Coverage: 1.27% of the image
+- Area: 74.28 m²
+- Energy potential: 16099.15 kWh/year
