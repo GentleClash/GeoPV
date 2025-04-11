@@ -243,8 +243,6 @@ const RooftopDetails = ({ rooftops }) => (
           <p>Coverage: {rooftop.percentage.toFixed(2)}%</p>
           <p>Area: {rooftop.area_m2.toFixed(2)} m²</p>
           <p>Energy Potential: {rooftop.energy_potential_kwh_per_year.toFixed(2)} kWh/year</p>
-          <p>Potential Panels: {rooftop.potential_panel_count}</p>
-          <p>CO2 Saved: {rooftop.co2_saved_kg_per_year.toFixed(2)} kg/year</p>
         </div>
       </div>
     ))}
