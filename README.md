@@ -7,7 +7,7 @@ A robust full-stack application that analyzes satellite imagery to detect roofto
 
 ## Overview
 
-**Rooftop Solar Analyzer** uses a YOLO-based machine learning model to automatically identify rooftops from satellite/aerial imagery. The system calculates solar energy generation potential and provides insights like:
+**GeoPV** uses a YOLO-based machine learning model to automatically identify rooftops from satellite/aerial imagery. The system calculates solar energy generation potential and provides insights like:
 
 - **Total rooftop coverage percentage**
 - **Area measurement (in square meters)**
