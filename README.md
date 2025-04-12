@@ -6,7 +6,7 @@ A robust full-stack application that analyzes satellite imagery to detect roofto
 ---
 
 ## Check out the demo
-![Demo](https://s6.gifyu.com/images/bMGk1.gif)
+![Demo](Frontend/src/assets/Demo.gif)
 
 
 ## Overview
