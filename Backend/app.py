@@ -1,23 +1,73 @@
 # app.py
-import os
-import tempfile
-import time
-import uuid
-import json
-from flask import Flask, request, send_file, jsonify
-import cv2
+import os, uuid, json, base64, cv2, requests
+from flask import Flask, request, send_file, jsonify, render_template, send_from_directory
 from flask_cors import CORS
 from redis import Redis
 import rq
 from rq.job import Job
-from utils.tasks import process_image 
+from utils.tasks import process_image
+from io import BytesIO
+from PIL import Image
+from dotenv import load_dotenv
+load_dotenv()
+GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY", "")
 
 app = Flask(__name__)
-CORS(app)
-
-# Initialize Redis and RQ
 redis_conn = Redis(host='localhost', port=6379, db=0)
 queue = rq.Queue('rooftop_detection', connection=redis_conn)
+CORS(app)
+
+@app.route('/map_view')
+def map_view():
+    return render_template('map_view.html', api_key=GOOGLE_MAPS_API_KEY)
+
+@app.route('/temp/<filename>')
+def serve_temp_file(filename):
+    return send_from_directory('temp', filename)
+
+@app.route('/geocode', methods=['POST'])
+def geocode_address():
+    address = request.json.get('address')
+    
+    geocode_url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={GOOGLE_MAPS_API_KEY}"
+    response = requests.get(geocode_url)
+    
+    if response.status_code == 200:
+        data = response.json()
+        if data['status'] == 'OK':
+            location = data['results'][0]['geometry']['location']
+            return jsonify({
+                'status': 'success',
+                'lat': location['lat'],
+                'lng': location['lng']
+            })
+    
+    return jsonify({'status': 'error', 'message': 'Could not geocode address'})
+
+@app.route('/capture_image', methods=['POST'])
+def capture_image():
+    data = request.json
+    image_data = data.get('imageData')
+    crop_dimensions = data.get('cropDimensions')
+    
+    image_data = image_data.replace('data:image/png;base64,', '')
+    
+    image_bytes = base64.b64decode(image_data)
+    img = Image.open(BytesIO(image_bytes))
+    
+    width = crop_dimensions.get('width')
+    height = crop_dimensions.get('height')
+    
+    cropped_img = img.crop((0, 0, width, height))
+    
+    temp_image_path = os.path.join("temp", f"{str(uuid.uuid4())}_satellite_capture.png")
+    os.makedirs(os.path.dirname(temp_image_path), exist_ok=True)
+    cropped_img.save(temp_image_path)
+    
+    return jsonify({
+        'status': 'success',
+        'image_path': temp_image_path
+    })
 
 
 @app.route('/detect_rooftops', methods=['POST'])
@@ -47,13 +97,10 @@ def detect_rooftops():
         }), 400
     
     try:
-        # Create a directory for temporary files if it doesn't exist
         os.makedirs("temp", exist_ok=True)
         
-        # Generate unique job ID
         job_id = str(uuid.uuid4())
         
-        # Save uploaded file with job ID in the filename
         temp_image_path = os.path.join("temp", f"{job_id}_{uploaded_file.filename}")
         uploaded_file.save(temp_image_path)
         print(f"Saved file to {temp_image_path}")
@@ -185,4 +232,4 @@ if __name__ == '__main__':
     # Create required directories
     os.makedirs("temp", exist_ok=True)
     os.makedirs("results", exist_ok=True)
-    app.run(debug=True)
+    app.run(debug=True, port=5000)

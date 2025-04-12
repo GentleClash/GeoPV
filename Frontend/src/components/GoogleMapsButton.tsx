@@ -23,25 +23,13 @@ const GoogleMapsButton = () => {
     setSearchError('');
 
     try {
-      // Using Nominatim OpenStreetMap API for geocoding (free and no API key required)
-      const response = await axios.get(`https://nominatim.openstreetmap.org/search`, {
-        params: {
-          q: cityName,
-          format: 'json',
-          limit: 1
-        },
-        headers: {
-          'Accept-Language': 'en-US,en;q=0.9',
-          'User-Agent': 'GeoPV-Solar-Analyzer'
-        }
-      });
+      const response = await axios.post('http://localhost:5000/geocode', { address: cityName });
 
-      if (response.data && response.data.length > 0) {
-        const { lat, lon } = response.data[0];
-        // Open Google Maps in a new tab with the specified coordinates and zoom level
-        window.open(
-          `https://www.google.com/maps/@${lat},${lon},115m/data=!3m1!1e3`,
-          '_blank'
+      if (response.data.status === 'success') {
+        const mapWindow = window.open(
+          `http://localhost:5000/map_view?lat=${response.data.lat}&lng=${response.data.lng}`,
+          '_blank',
+          'width=900,height=700'
         );
       } else {
         setSearchError(`Location "${cityName}" not found. Please try another search term.`);
@@ -54,14 +42,17 @@ const GoogleMapsButton = () => {
     }
   };
 
+
+
   const openGoogleMapsCurrentLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
           window.open(
-            `https://www.google.com/maps/@${latitude},${longitude},115m/data=!3m1!1e3`,
-            '_blank'
+            `http://localhost:5000/map_view?lat=${latitude}&lng=${longitude}`,
+            '_blank',
+            'width=900,height=700'
           );
         },
         (error) => {
@@ -80,7 +71,7 @@ const GoogleMapsButton = () => {
         <Map size={24} className="text-green-600" />
         <h3 className="text-lg font-semibold text-green-800">Find Location on Google Maps</h3>
       </div>
-      
+
       <div className="flex flex-col space-y-4">
         {/* City search input and button */}
         <div className="flex flex-col sm:flex-row gap-2">
@@ -96,7 +87,7 @@ const GoogleMapsButton = () => {
               <p className="text-red-500 text-xs mt-1">{searchError}</p>
             )}
           </div>
-          
+
           <button
             onClick={openGoogleMapsWithCity}
             disabled={isSearching}
@@ -113,7 +104,7 @@ const GoogleMapsButton = () => {
             )}
           </button>
         </div>
-        
+
         {/* Current location button */}
         <div className="text-center">
           <button
@@ -124,7 +115,7 @@ const GoogleMapsButton = () => {
           </button>
         </div>
       </div>
-      
+
       <div className="mt-4 p-3 bg-white rounded-lg border border-green-100">
         <div className="flex items-center gap-2">
           <Camera size={16} className="text-green-600" />

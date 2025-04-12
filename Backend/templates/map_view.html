@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rooftop Satellite Capture</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        #map-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            margin: 20px 0;
+        }
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        #capture-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 300px;
+            height: 300px;
+            border: 3px solid red;
+            pointer-events: none;
+        }
+        .controls {
+            margin-bottom: 20px;
+        }
+        input[type="text"] {
+            width: 300px;
+            padding: 8px;
+            margin-right: 10px;
+        }
+        button {
+            padding: 8px 16px;
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #3367d6;
+        }
+        #result {
+            margin-top: 20px;
+        }
+        #captured-image {
+            max-width: 100%;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Rooftop Satellite Capture</h1>
+        
+        <div class="controls">
+            <input type="text" id="address-input" placeholder="Enter address...">
+            <button id="search-button">Search</button>
+        </div>
+        
+        <div id="map-container">
+            <div id="map"></div>
+            <div id="capture-overlay"></div>
+        </div>
+        
+        <button id="capture-button">Capture Image</button>
+        
+        <div id="result">
+            <h2>Captured Image</h2>
+            <div id="captured-image"></div>
+        </div>
+    </div>
+    
+    <script>
+        let map;
+        let captureOverlay;
+        
+        function initMap() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const lat = parseFloat(urlParams.get('lat')) || 40.7128;
+            const lng = parseFloat(urlParams.get('lng')) || -74.0060;
+    
+            const defaultLocation = { lat: lat, lng: lng };
+            
+            // Create map
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: defaultLocation,
+                zoom: 19,
+                mapTypeId: 'satellite',
+                disableDefaultUI: true,
+                styles: [
+                    {
+                        featureType: 'all',
+                        elementType: 'labels',
+                        stylers: [{ visibility: 'off' }]
+                    }
+                ]
+            });
+            
+            // Search button functionality
+            document.getElementById('search-button').addEventListener('click', function() {
+                const address = document.getElementById('address-input').value;
+                if (address) {
+                    searchAddress(address);
+                }
+            });
+            
+            // Capture button functionality
+            document.getElementById('capture-button').addEventListener('click', captureImage);
+        }
+        
+        function searchAddress(address) {
+            fetch('/geocode', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ address: address }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Center map on the searched location
+                    map.setCenter({ lat: data.lat, lng: data.lng });
+                    map.setZoom(19); 
+                } else {
+                    alert('Could not find address. Please try again.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while searching for the address.');
+            });
+        }
+        
+        function captureImage() {
+    // Get map center
+    const center = map.getCenter();
+    
+    // Calculate the bounds of our overlay
+    const overlayWidth = document.getElementById('capture-overlay').offsetWidth;
+    const overlayHeight = document.getElementById('capture-overlay').offsetHeight;
+    
+    
+    const extraHeight = 50; 
+    
+    // Create a canvas to capture the map with extra height
+    const canvas = document.createElement('canvas');
+    canvas.width = overlayWidth;
+    canvas.height = overlayHeight + extraHeight;
+    const ctx = canvas.getContext('2d');
+    
+    const scale = 2; 
+    const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${center.lat()},${center.lng()}&zoom=${map.getZoom()}&size=${overlayWidth}x${overlayHeight + extraHeight}&scale=${scale}&maptype=satellite&key={{ api_key }}`;
+    
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.onload = function() {
+        ctx.drawImage(img, 0, 0, overlayWidth, overlayHeight + extraHeight);
+        const imageData = canvas.toDataURL('image/png');
+        
+        fetch('/capture_image', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                imageData: imageData,
+                cropDimensions: {
+                    width: overlayWidth,
+                    height: overlayHeight,
+                    extraHeight: extraHeight
+                }
+            }),
+        })
+        .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Submitting it to the detection pipeline
+                    document.getElementById('captured-image').innerHTML = `
+                        <div class="success-message">
+                            <p>Image captured successfully!</p>
+                            <button id="analyze-button" class="analyze-btn">Analyze This Image</button>
+                        </div>
+                        <img src="/temp/${data.image_path.split('/').pop()}?t=${new Date().getTime()}" alt="Captured Satellite Image">
+                    `;
+                    const fullPath = `${window.location.origin}/temp/${data.image_path.split('/').pop()}`;
+                    // Add event listener to the analyze button
+                    document.getElementById('analyze-button').addEventListener('click', function() {
+                        window.opener.postMessage({
+                            type: 'SATELLITE_IMAGE_CAPTURED',
+                            imagePath: fullPath
+                        }, '*');
+                        window.close();
+                    });
+                } else {
+                    alert('Failed to process the image.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while processing the image.');
+            });
+        };
+        img.onerror = function() {
+            alert('Failed to load satellite image. Please try again.');
+    };
+    img.src = staticMapUrl;
+}    </script>
+    <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}&callback=initMap"></script>
+</body>
+</html>

@@ -23,38 +23,76 @@ const SolarRooftopDetector = () => {
   const [jobId, setJobId] = useState(null);
   const [jobStatus, setJobStatus] = useState(null);
   const [pollingInterval, setPollingInterval] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+
+  useEffect(() => {
+    // Add event listener for messages from the map window
+    const handleMessage = (event) => {
+      // Check if the message is from our map window
+      if (event.data && event.data.type === 'SATELLITE_IMAGE_CAPTURED') {
+        // Create a file object from the image path
+        fetch(event.data.imagePath)
+          .then(response => response.blob())
+          .then(blob => {
+            const file = new File([blob], "satellite_capture.png", { type: "image/png" });
+            setSelectedFile(file);
+            setAnalysisResult(null);
+            setError(null);
+            setJobId(null);
+            setJobStatus(null);
+            // Optionally auto-start the analysis
+            // handleUpload();
+            const previewURL = URL.createObjectURL(blob);
+            setImagePreview(previewURL);
+          }
+          )
+          .catch(err => {
+            console.error("Error fetching captured image:", err);
+            setError("Failed to load captured image");
+          });
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+
+    // Clean up the event listener on component unmount
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, []);
+
 
   // Function to check job status
   const checkJobStatus = async (id) => {
     try {
       const response = await axios.get(`http://localhost:5000/job_status/${id}`);
       const statusData = response.data;
-      
+
       setJobStatus(statusData);
-      
+
       // If job completed, fetch results
       if (statusData.status === 'completed') {
         clearInterval(pollingInterval);
         setPollingInterval(null);
-        
+
         // Get image as blob
         const imageResponse = await axios.get(`http://localhost:5000/get_result_image/${id}`, {
           responseType: 'blob'
         });
-        
+
         // Get report as text
         const reportResponse = await axios.get(`http://localhost:5000/get_report/${id}`, {
           responseType: 'text'
         });
-        
+
         setAnalysisResult({
           analysis: statusData,  // The analysis data is now included in the status response
           imageUrl: URL.createObjectURL(imageResponse.data),
           report: reportResponse.data
         });
-        
+
         setIsLoading(false);
-      } 
+      }
       // If job failed, show error
       else if (statusData.status === 'failed' || statusData.status === 'error') {
         clearInterval(pollingInterval);
@@ -115,21 +153,21 @@ const SolarRooftopDetector = () => {
       // Get job ID from response
       const id = response.data.job_id;
       setJobId(id);
-      
+
       // Start polling for job status
       if (pollingInterval) {
         clearInterval(pollingInterval);
       }
-      
+
       const interval = setInterval(() => {
         checkJobStatus(id);
       }, 2000); // Poll every 2 seconds
-      
+
       setPollingInterval(interval);
-      
+
       // Also check immediately
       checkJobStatus(id);
-      
+
     } catch (err) {
       setError(err.response?.data?.error || 'An error occurred during upload');
       console.error(err);
@@ -157,21 +195,21 @@ const SolarRooftopDetector = () => {
       </div>
 
       {/* Step 1: Get an Image */}
-      <OptionsSection 
-        title="Get an Image" 
+      <OptionsSection
+        title="Get an Image"
         icon={<div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold">1</div>}
       >
         <p className="mb-4 text-gray-600">Choose one of these options to get a satellite image for analysis:</p>
-        
+
         {/* Google Maps Button with City Search */}
         <GoogleMapsButton />
-        
+
         <div className="text-center my-4">
           <div className="inline-block px-4 py-1 rounded-full bg-gray-100 text-gray-600 text-sm font-medium">
             OR
           </div>
         </div>
-        
+
         {/* File Upload Component */}
         <FileUploader
           onFileSelect={handleFileSelect}
@@ -185,8 +223,8 @@ const SolarRooftopDetector = () => {
       </OptionsSection>
 
       {/* Step 2: Run Analysis */}
-      <OptionsSection 
-        title="Run Analysis" 
+      <OptionsSection
+        title="Run Analysis"
         icon={<div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold">2</div>}
       >
         <button
@@ -199,15 +237,21 @@ const SolarRooftopDetector = () => {
         </button>
 
         {error && <ErrorDisplay message={error} />}
-        
+        {imagePreview && (
+          <div className="image-preview">
+            <p>Preview:</p>
+            <img src={imagePreview} alt="Satellite Preview" style={{ maxWidth: '100%', height: 'auto' }} />
+          </div>
+        )}
+
         {/* Show job progress when job is processing */}
         {isLoading && jobStatus && jobStatus.status === 'processing' && (
-          <JobProgress 
-            status={jobStatus.status} 
-            position={jobStatus.position_in_queue} 
+          <JobProgress
+            status={jobStatus.status}
+            position={jobStatus.position_in_queue}
           />
         )}
-        
+
         {/* Show simple loading spinner when initiating job */}
         {isLoading && (!jobStatus || !jobId) && (
           <LoadingSpinner message="Submitting job..." />
@@ -216,8 +260,8 @@ const SolarRooftopDetector = () => {
 
       {/* Step 3: View Results */}
       {analysisResult && (
-        <OptionsSection 
-          title="View Results" 
+        <OptionsSection
+          title="View Results"
           icon={<div className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold">3</div>}
         >
           <div className="space-y-6">
@@ -248,7 +292,7 @@ const SolarRooftopDetector = () => {
           </div>
         </OptionsSection>
       )}
-      
+
       {/* Full Screen Image Modal */}
       {fullScreenImage && (
         <FullScreenImageModal
