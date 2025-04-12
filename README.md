@@ -5,6 +5,10 @@ A robust full-stack application that analyzes satellite imagery to detect roofto
 
 ---
 
+## Check out the demo
+![Demo](https://s6.gifyu.com/images/bMGk1.gif)
+
+
 ## Overview
 
 **GeoPV** uses a YOLO-based machine learning model to automatically identify rooftops from satellite/aerial imagery. The system calculates solar energy generation potential and provides insights like:
