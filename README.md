@@ -1,4 +1,5 @@
-# GeoPV : A solar potential analyzer for Indian rooftops.
+# GeoPV
+_A solar potential analyzer for Indian rooftops._
 
 A robust full-stack application that analyzes satellite imagery to detect rooftops and calculate their solar energy generation potential.
 
