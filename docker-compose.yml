@@ -1,0 +1,51 @@
+services:
+  redis:
+    image: "redis:alpine"
+    container_name: geopv-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile 
+    container_name: geopv-backend
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./Backend:/app
+    environment:
+      - FLASK_ENV=production
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    command: gunicorn app:app -b 0.0.0.0:5000 --workers 4
+    restart: unless-stopped
+
+  worker:
+    build: ./Backend
+    container_name: geopv-worker
+    volumes:
+      - ./Backend:/app
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    command: python worker.py
+    restart: unless-stopped
+
+  frontend:
+    build: ./Frontend
+    container_name: geopv-frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./Frontend:/app
+      - /app/node_modules
+    restart: unless-stopped
+
+volumes:
+  redis-data:
