@@ -60,6 +60,15 @@ def capture_image():
     
     cropped_img = img.crop((0, 0, width, height))
     
+    #Clean up the temp directory if file created more than 1 hour ago
+    temp_dir = "temp"
+    for filename in os.listdir(temp_dir):
+        file_path = os.path.join(temp_dir, filename)
+        if os.path.isfile(file_path):
+            file_age = os.path.getmtime(file_path)
+            if (time.time() - file_age) > 3600:  
+                os.remove(file_path)
+
     temp_image_path = os.path.join("temp", f"{str(uuid.uuid4())}_satellite_capture.png")
     os.makedirs(os.path.dirname(temp_image_path), exist_ok=True)
     cropped_img.save(temp_image_path)
@@ -191,6 +200,16 @@ def job_status(job_id):
 @app.route('/get_result_image/<job_id>', methods=['GET'])
 def get_result_image(job_id):
     try:
+        #Clean the results directory if file created more than 1 hour ago
+        results_dir = "results"
+        for filename in os.listdir(results_dir):
+            file_path = os.path.join(results_dir, filename)
+            if os.path.isfile(file_path):
+                file_age = os.path.getmtime(file_path)
+                if (time.time() - file_age) > 3600:  
+                    os.remove(file_path)
+
+
         # Check if job result exists
         result_data = redis_conn.get(f"job_result:{job_id}")
         if not result_data:
