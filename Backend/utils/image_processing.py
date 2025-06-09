@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-def preprocess_image(image, sharpen_method='standard', amount=1.5, radius=1, threshold=0):
+def preprocess_image(image, sharpen_method='standard', amount=1.5, radius=1, threshold=0) -> np.ndarray:
     """
     Preprocess the image with different sharpening methods.
 

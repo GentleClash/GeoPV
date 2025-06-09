@@ -5,9 +5,9 @@ from matplotlib.patches import Patch
 from ultralytics import YOLO 
 from utils.image_processing import preprocess_image
 
-def detect_rooftops_with_solar_potential(image_path, model_path, conf_threshold=0.5, color_opacity=0.7,
+def detect_rooftops_with_solar_potential(image_path, model_path, conf_threshold=0.4, color_opacity=0.7,
                                          display_original=True, panel_efficiency=0.20,
-                                         solar_radiation=1445, performance_ratio=0.75):
+                                         solar_radiation=1700, performance_ratio=0.75):
     """
     Detect individual rooftops in an image, display masked areas with different colors,
     calculate percentage of image covered by each rooftop, and calculate solar potential.
@@ -33,7 +33,7 @@ def detect_rooftops_with_solar_potential(image_path, model_path, conf_threshold=
     # Convert from BGR to RGB for display
     original_rgb = cv2.cvtColor(original_image, cv2.COLOR_BGR2RGB)
 
-    gsd = 0.12 # meters/pixel (Average value for around 115 meters zoom in India)
+    gsd = 0.1358 # meters/pixel (Average value for around 115 meters zoom in India)
     height, width = original_image.shape[:2]
     image_pixels = height * width
     image_area = height * width * gsd * gsd
