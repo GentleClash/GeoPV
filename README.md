@@ -114,6 +114,15 @@ $ cd Frontend
 $ npm run dev
 ```
 
+---
+### Using Docker (Optional)
+If you prefer using Docker, you can run the entire application stack with Docker Compose.
+```bash
+# From the GeoPV root directory
+$ docker-compose up --build
+```
+---
+
 ### Access the Application
 
 Once all services are running:
