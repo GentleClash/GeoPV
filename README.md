@@ -103,7 +103,7 @@ $ python worker.py
 # From the GeoPV root directory (in a new terminal)
 $ cd Backend
 $ source venv/bin/activate  # On Windows: venv\Scripts\activate
-$ python app.py
+$ gunicorn app:app -b 0.0.0:5000 --workers 4
 ```
 
 ### 3. Start the Frontend (React App)
