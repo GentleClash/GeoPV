@@ -1,11 +1,12 @@
 flask
 flask-cors
+torch --index-url https://download.pytorch.org/whl/cpu/
 gunicorn
 ultralytics
 opencv-python
 numpy
 pillow
-torch
 redis 
 rq
 Pillow
+python-dotenv

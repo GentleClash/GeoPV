@@ -3,9 +3,14 @@ import json
 import cv2
 from redis import Redis
 from utils.detect import detect_rooftops_with_solar_potential
+from urllib.parse import urlparse
+
 
 # Initialize Redis connection
-redis_conn = Redis(host='localhost', port=6379, db=0)
+redis_url_str = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+url = urlparse(redis_url_str)
+redis_host = url.hostname
+redis_conn = Redis(host=redis_host, port=6379, db=0)
 
 def process_image(image_path, job_id):
     """
@@ -15,16 +20,18 @@ def process_image(image_path, job_id):
         print(f"Starting to process image: {image_path} for job: {job_id}")
         
         # Check if model file exists
-        model_path = 'best.pt'
-        if not os.path.exists(model_path):
-            raise FileNotFoundError(f"Model file not found at {model_path}")
+        model_path_n = 'model_N.pt'
+        model_path_s = 'model_S.pt'
+        if not (os.path.exists(model_path_n) or os.paths.exists(model_path_s)):
+            raise FileNotFoundError(f"Model file not found at {model_path_n} or {model_path_s}")
         
         print(f"Model file found, beginning detection")
         
         results = detect_rooftops_with_solar_potential(
             image_path, 
-            model_path,
-            conf_threshold=0.5,
+            model_path_n,
+            model_path_s,
+            conf_threshold=0.51,
             color_opacity=0.7
         )
         

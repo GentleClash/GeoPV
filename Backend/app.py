@@ -10,11 +10,16 @@ from io import BytesIO
 from PIL import Image
 from dotenv import load_dotenv
 import time
+from urllib.parse import urlparse
 load_dotenv()
 GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY", "")
 
 app = Flask(__name__)
-redis_conn = Redis(host='localhost', port=6379, db=0)
+
+redis_url_str = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+url = urlparse(redis_url_str)
+redis_host = url.hostname
+redis_conn = Redis(host=redis_host, port=6379, db=0)
 queue = rq.Queue('rooftop_detection', connection=redis_conn)
 CORS(app)
 

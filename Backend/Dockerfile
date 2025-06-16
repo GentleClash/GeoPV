@@ -4,7 +4,7 @@ FROM python:3.9-slim
 WORKDIR /app
 
 # Create a non-root user and group
-RUN addgroup --system app && adduser --system --group app
+RUN addgroup --system --gid 984 app && adduser --system --uid 1000 --gid 984 app
 
 # Install necessary system libraries for dependencies like OpenCV
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -23,6 +23,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 # and set the correct ownership to the new 'app' user
 COPY . .
 RUN chown -R app:app /app
+
+RUN mkdir -p /app/temp && chown -R app:app /app/temp && chmod 777 /app/temp && mkdir -p /app/results && chown -R app:app /app/results && chmod 777 /app/results
+RUN mkdir -p /app/.config/ultralytics && chown -R app:app /app/.config
 
 # Switch to the non-root user
 USER app

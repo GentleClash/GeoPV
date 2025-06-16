@@ -20,6 +20,7 @@ services:
     environment:
       - FLASK_ENV=production
       - REDIS_URL=redis://redis:6379/0
+      - YOLO_CONFIG_DIR=/app/.config/ultralytics
     depends_on:
       - redis
     command: gunicorn app:app -b 0.0.0.0:5000 --workers 4

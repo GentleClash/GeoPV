@@ -1,10 +1,17 @@
 import os
 import redis
 from rq import Worker, Queue
+from urllib.parse import urlparse
 
-# Configure Redis connection
-redis_conn = redis.Redis(host='localhost', port=6379, db=0)
+redis_url_str = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
 
+# Parse the URL to extract host, port, and db
+url = urlparse(redis_url_str)
+redis_host = url.hostname
+redis_port = url.port
+redis_db = int(url.path.replace('/', '')) if url.path else 0
+
+redis_conn = redis.Redis(host=redis_host, port=redis_port, db=redis_db)
 # Define which queues this worker should process
 listen = ['rooftop_detection']
 
