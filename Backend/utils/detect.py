@@ -7,6 +7,7 @@ from matplotlib.patches import Patch
 from ultralytics import YOLO
 #from utils.image_processing import preprocess_image
 from time import time
+from torch.cuda import is_available
 
 def mask_iou_vectorized(mask1, mask2) -> float:
     """Optimized IoU calculation between two binary masks"""
@@ -14,10 +15,10 @@ def mask_iou_vectorized(mask1, mask2) -> float:
     union = np.logical_or(mask1, mask2).sum()
     return intersection / union if union != 0 else 0
 
-def create_ensemble_predictor(model_n_path, model_s_path, nms_iou_threshold=0.5):
+def create_ensemble_predictor(model_n_path, model_s_path, nms_iou_threshold=0.5) -> callable:
     """Create ensemble predictor using N and S models with optimizations"""
     # Load models with GPU if available
-    device = 'cuda' if cv2.cuda.getCudaEnabledDeviceCount() > 0 else 'cpu'
+    device = 'cuda' if is_available() else 'cpu'
     model_n = YOLO(model_n_path)
     model_s = YOLO(model_s_path)
 
@@ -26,7 +27,7 @@ def create_ensemble_predictor(model_n_path, model_s_path, nms_iou_threshold=0.5)
         model_n.to(device)
         model_s.to(device)
 
-    def ensemble_predict(image, conf_threshold=0.51):
+    def ensemble_predict(image, conf_threshold=0.51) -> tuple:
         # Get image dimensions once
         img_h, img_w = image.shape[:2]
 
@@ -154,7 +155,7 @@ def detect_rooftops_with_solar_potential(image_path, model_n_path, model_s_path,
                                                  conf_threshold=0.51, color_opacity=0.7,
                                                  display_original=True, panel_efficiency=0.20,
                                                  solar_radiation=1700, performance_ratio=0.75,
-                                                 nms_iou_threshold=0.5):
+                                                 nms_iou_threshold=0.5) -> dict:
     """
     Optimized version of rooftop detection with solar potential calculation.
     All core logic preserved with performance improvements.
@@ -203,10 +204,10 @@ def detect_rooftops_with_solar_potential(image_path, model_n_path, model_s_path,
     else:
         base_image = np.ones_like(original_rgb, dtype=np.float32)
 
-    # Pre-generate colors (same logic, cached)
+    # Pre-generate colors 
     np.random.seed(42)
     colors = []
-    for _ in range(min(100, len(ensemble_masks) + 10)):  # Only generate needed colors
+    for _ in range(min(100, len(ensemble_masks) + 10)):  
         h = np.random.uniform(0, 1)
         s = np.random.uniform(0.7, 1.0)
         v = np.random.uniform(0.6, 1.0)
@@ -234,11 +235,11 @@ def detect_rooftops_with_solar_potential(image_path, model_n_path, model_s_path,
 
     composite_mask = np.zeros_like(base_image)
 
-    # Vectorized processing where possible
+    # Vectorized processing 
     target_size = (width, height)
     #print(f"Target size for masks: {target_size}")
 
-    # Process ensemble predictions with optimizations
+    # Process ensemble predictions
 
     composite_image_time_start = time()
     for i, (original_mask, confidence) in enumerate(zip(ensemble_masks, ensemble_confs)):
@@ -260,7 +261,7 @@ def detect_rooftops_with_solar_potential(image_path, model_n_path, model_s_path,
         percentage = (mask_area_pixels / image_pixels) * 100
         area_m2 = (percentage / 100) * image_area
 
-        # Solar potential calculation (vectorized)
+        # Solar potential calculation
         energy_potential = area_m2 * panel_efficiency * solar_radiation * performance_ratio
 
         total_coverage += percentage
@@ -284,7 +285,7 @@ def detect_rooftops_with_solar_potential(image_path, model_n_path, model_s_path,
 
             font = cv2.FONT_HERSHEY_SIMPLEX
             text = str(i+1)
-            text_size = cv2.getTextSize(text, font, 0.8, 2)[0]  # Slightly smaller font
+            text_size = cv2.getTextSize(text, font, 0.8, 2)[0]  
 
             cv2.rectangle(
                 base_image,
@@ -305,7 +306,7 @@ def detect_rooftops_with_solar_potential(image_path, model_n_path, model_s_path,
                 cv2.LINE_AA
             )
 
-        # Optimized color application
+        
         color = colors[i % len(colors)]
         mask_3d = np.stack([mask] * 3, axis=-1)
         color_array = np.array(color).reshape(1, 1, 3)
@@ -333,7 +334,7 @@ def detect_rooftops_with_solar_potential(image_path, model_n_path, model_s_path,
     result = np.clip(result, 0, 1)
 
     # Efficient visualization
-    plt.figure(figsize=(12, 10))  # Slightly smaller figure
+    plt.figure(figsize=(12, 10))  
     plt.imshow(result)
 
     # Optimized legend creation
@@ -372,6 +373,7 @@ def detect_rooftops_with_solar_potential(image_path, model_n_path, model_s_path,
     plt.savefig('rooftop_detection_result.png', dpi=200, bbox_inches='tight')  # Lower DPI
     plotlib_time_stop = time()
     print(f"    Matplotlib plotting time: {plotlib_time_stop - plotlib_time_start:.2f} seconds")
+    plt.close()
 
     # Optimized report generation
     with open("rooftop_solar_potential_report.txt", "w") as f:
