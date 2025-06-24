@@ -11,10 +11,8 @@ services:
   backend:
     build:
       context: ./Backend
-      dockerfile: Dockerfile 
+      dockerfile: Dockerfile
     container_name: geopv-backend
-    ports:
-      - "5000:5000"
     volumes:
       - ./Backend:/app
     environment:
@@ -41,11 +39,18 @@ services:
   frontend:
     build: ./Frontend
     container_name: geopv-frontend
+    restart: unless-stopped
+  nginx:
+    image: nginx:alpine
+    container_name: geopv-nginx
     ports:
-      - "5173:5173"
+      - "80:80"
     volumes:
-      - ./Frontend:/app
-      - /app/node_modules
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - /dev/null:/etc/nginx/conf.d/default.conf:ro
+      - ./Frontend/dist:/usr/share/nginx/html:ro  
+    depends_on:
+      - backend  
     restart: unless-stopped
 
 volumes:

@@ -65,7 +65,7 @@ const SolarRooftopDetector = () => {
   // Function to check job status
   const checkJobStatus = async (id) => {
     try {
-      const response = await axios.get(`http://localhost:5000/job_status/${id}`);
+      const response = await axios.get(`/api/job_status/${id}`);
       const statusData = response.data;
 
       setJobStatus(statusData);
@@ -76,12 +76,12 @@ const SolarRooftopDetector = () => {
         setPollingInterval(null);
 
         // Get image as blob
-        const imageResponse = await axios.get(`http://localhost:5000/get_result_image/${id}`, {
+        const imageResponse = await axios.get(`/api/get_result_image/${id}`, {
           responseType: 'blob'
         });
 
         // Get report as text
-        const reportResponse = await axios.get(`http://localhost:5000/get_report/${id}`, {
+        const reportResponse = await axios.get(`/api/get_report/${id}`, {
           responseType: 'text'
         });
 
@@ -144,7 +144,7 @@ const SolarRooftopDetector = () => {
 
     try {
       // Submit job
-      const response = await axios.post('http://localhost:5000/detect_rooftops', formData, {
+      const response = await axios.post('/api/detect_rooftops', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }

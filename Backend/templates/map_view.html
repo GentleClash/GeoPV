@@ -123,7 +123,7 @@
         }
         
         function searchAddress(address) {
-            fetch('/geocode', {
+            fetch('/api/geocode', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -155,7 +155,7 @@
     const overlayHeight = document.getElementById('capture-overlay').offsetHeight;
     
     
-    const extraHeight = 50; 
+    const extraHeight = 15;
     
     // Create a canvas to capture the map with extra height
     const canvas = document.createElement('canvas');
@@ -163,7 +163,7 @@
     canvas.height = overlayHeight + extraHeight;
     const ctx = canvas.getContext('2d');
     
-    const scale = 2; 
+    const scale = 1;
     const staticMapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${center.lat()},${center.lng()}&zoom=${map.getZoom()}&size=${overlayWidth}x${overlayHeight + extraHeight}&scale=${scale}&maptype=satellite&key={{ api_key }}`;
     
     const img = new Image();
@@ -172,21 +172,36 @@
         ctx.drawImage(img, 0, 0, overlayWidth, overlayHeight + extraHeight);
         const imageData = canvas.toDataURL('image/png');
         
-        fetch('/capture_image', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ 
-                imageData: imageData,
-                cropDimensions: {
-                    width: overlayWidth,
-                    height: overlayHeight,
-                    extraHeight: extraHeight
+        fetch('/api/capture_image', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    imageData: imageData,
+                    cropDimensions: {
+                        width: overlayWidth,
+                        height: overlayHeight,
+                        extraHeight: extraHeight
+                    }
+                }),
+            })
+            .then(response => {
+                // Check if response is ok
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
-            }),
-        })
-        .then(response => response.json())
+
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    return response.text().then(text => {
+                        throw new Error(`Expected JSON response but got: ${text.substring(0, 200)}...`);
+                    });
+                }
+
+                return response.json();
+            })
             .then(data => {
                 if (data.status === 'success') {
                     // Submitting it to the detection pipeline
@@ -195,9 +210,10 @@
                             <p>Image captured successfully!</p>
                             <button id="analyze-button" class="analyze-btn">Analyze This Image</button>
                         </div>
-                        <img src="/temp/${data.image_path.split('/').pop()}?t=${new Date().getTime()}" alt="Captured Satellite Image">
+                        <img src="/api/temp/${data.image_path.split('/').pop()}?t=${new Date().getTime()}" alt="Captured Satellite Image">
                     `;
-                    const fullPath = `${window.location.origin}/temp/${data.image_path.split('/').pop()}`;
+                    const fullPath = `${window.location.origin}/api/temp/${data.image_path.split('/').pop()}`;
+
                     // Add event listener to the analyze button
                     document.getElementById('analyze-button').addEventListener('click', function() {
                         window.opener.postMessage({
@@ -207,16 +223,16 @@
                         window.close();
                     });
                 } else {
-                    alert('Failed to process the image.');
+                    alert(`Failed to process the image: ${data.message || 'Unknown error'}`);
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('An error occurred while processing the image.');
+                alert(`An error occurred while processing the image: ${error.message}`);
             });
         };
-        img.onerror = function() {
-            alert('Failed to load satellite image. Please try again.');
+                    img.onerror = function() {
+                        alert('Failed to load satellite image. Please try again.');
     };
     img.src = staticMapUrl;
 }    </script>

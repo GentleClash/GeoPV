@@ -23,6 +23,10 @@ redis_conn = Redis(host=redis_host, port=6379, db=0)
 queue = rq.Queue('rooftop_detection', connection=redis_conn)
 CORS(app)
 
+@app.route('/ping', methods=['GET'])
+def ping():
+    return jsonify({'status': 'ok', 'message': 'Server is running'}), 200
+
 @app.route('/map_view')
 def map_view():
     return render_template('map_view.html', api_key=GOOGLE_MAPS_API_KEY)
@@ -50,40 +54,73 @@ def geocode_address():
     
     return jsonify({'status': 'error', 'message': 'Could not geocode address'})
 
-@app.route('/capture_image', methods=['POST'])
+@app.route('/capture_image', methods=['POST', 'GET'])
 def capture_image():
-    data = request.json
-    image_data = data.get('imageData')
-    crop_dimensions = data.get('cropDimensions')
-    
-    image_data = image_data.replace('data:image/png;base64,', '')
-    
-    image_bytes = base64.b64decode(image_data)
-    img = Image.open(BytesIO(image_bytes))
-    
-    width = crop_dimensions.get('width')
-    height = crop_dimensions.get('height')
-    
-    cropped_img = img.crop((0, 0, width, height))
-    
-    #Clean up the temp directory if file created more than 1 hour ago
-    temp_dir = "temp"
-    for filename in os.listdir(temp_dir):
-        file_path = os.path.join(temp_dir, filename)
-        if os.path.isfile(file_path):
-            file_age = os.path.getmtime(file_path)
-            if (time.time() - file_age) > 3600:  
-                os.remove(file_path)
+    try:
+        data = request.json
 
-    temp_image_path = os.path.join("temp", f"{str(uuid.uuid4())}_satellite_capture.png")
-    os.makedirs(os.path.dirname(temp_image_path), exist_ok=True)
-    cropped_img.save(temp_image_path)
-    
-    return jsonify({
-        'status': 'success',
-        'image_path': temp_image_path
-    })
+        # Validate input data
+        if not data:
+            return jsonify({'status': 'error', 'message': 'No data provided'}), 400
 
+        image_data = data.get('imageData')
+        crop_dimensions = data.get('cropDimensions')
+
+        if not image_data or not crop_dimensions:
+            return jsonify({'status': 'error', 'message': 'Missing imageData or cropDimensions'}), 400
+
+        # Process image data
+        image_data = image_data.replace('data:image/png;base64,', '')
+
+        try:
+            image_bytes = base64.b64decode(image_data)
+            img = Image.open(BytesIO(image_bytes))
+        except Exception as e:
+            return jsonify({'status': 'error', 'message': f'Invalid image data: {str(e)}'}), 400
+
+        # Get crop dimensions
+        width = crop_dimensions.get('width')
+        height = crop_dimensions.get('height')
+
+        if not width or not height:
+            return jsonify({'status': 'error', 'message': 'Invalid crop dimensions'}), 400
+
+        # Crop image
+        cropped_img = img.crop((0, 0, width, height))
+
+        # Clean up the temp directory if files created more than 1 hour ago
+        temp_dir = "temp"
+
+        # Create temp directory if it doesn't exist
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
+
+        # Clean old files
+        try:
+            for filename in os.listdir(temp_dir):
+                file_path = os.path.join(temp_dir, filename)
+                if os.path.isfile(file_path):
+                    file_age = os.path.getmtime(file_path)
+                    if (time.time() - file_age) > 3600:  # 1 hour
+                        os.remove(file_path)
+        except Exception as e:
+            print(f"Warning: Could not clean temp directory: {e}")
+
+        # Save cropped image
+        temp_image_path = os.path.join(temp_dir, f"{str(uuid.uuid4())}_satellite_capture.png")
+        cropped_img.save(temp_image_path)
+
+        return jsonify({
+            'status': 'success',
+            'image_path': temp_image_path
+        })
+
+    except Exception as e:
+        print(f"Error in capture_image: {str(e)}")
+        return jsonify({
+            'status': 'error',
+            'message': f'Server error: {str(e)}'
+        }), 500
 
 @app.route('/detect_rooftops', methods=['POST'])
 def detect_rooftops():

@@ -1,4 +1,3 @@
-
 FROM node:24-alpine
 
 WORKDIR /app
@@ -10,10 +9,13 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
-# Copy the rest of your frontend source code
+# Copy the rest of frontend source code
 COPY . .
 
-# Expose the port Vite runs on
-EXPOSE 5173
+# Build the application
+RUN npm run build
 
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+# Use nginx to serve the built files
+FROM nginx:alpine
+COPY --from=0 /app/dist /usr/share/nginx/html
+EXPOSE 80

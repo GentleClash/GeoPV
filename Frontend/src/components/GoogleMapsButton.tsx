@@ -23,11 +23,11 @@ const GoogleMapsButton = () => {
     setSearchError('');
 
     try {
-      const response = await axios.post('http://localhost:5000/geocode', { address: cityName });
+      const response = await axios.post('/api/geocode', { address: cityName });
 
       if (response.data.status === 'success') {
         const mapWindow = window.open(
-          `http://localhost:5000/map_view?lat=${response.data.lat}&lng=${response.data.lng}`,
+          `/api/map_view?lat=${response.data.lat}&lng=${response.data.lng}`,
           '_blank',
           'width=900,height=700'
         );
@@ -50,7 +50,7 @@ const GoogleMapsButton = () => {
         (position) => {
           const { latitude, longitude } = position.coords;
           window.open(
-            `http://localhost:5000/map_view?lat=${latitude}&lng=${longitude}`,
+            `/api/map_view?lat=${latitude}&lng=${longitude}`,
             '_blank',
             'width=900,height=700'
           );
