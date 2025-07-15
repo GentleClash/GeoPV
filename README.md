@@ -44,7 +44,15 @@ The backend employs a distributed architecture with a Redis queue system to mana
 - CUDA-compatible GPU (recommended)
 
 ### Setup
-
+#### Using Docker (Optional)
+If you prefer using Docker, you can run the entire application stack with Docker Compose.
+```bash
+# Clone the repository
+$ git clone https://github.com/GentleClash/GeoPV.git
+$ cd GeoPV
+$ docker-compose up --build
+```
+---
 ```bash
 # Clone the repository
 $ git clone https://github.com/GentleClash/GeoPV.git
@@ -114,13 +122,6 @@ $ cd Frontend
 $ npm run dev
 ```
 
----
-### Using Docker (Optional)
-If you prefer using Docker, you can run the entire application stack with Docker Compose.
-```bash
-# From the GeoPV root directory
-$ docker-compose up --build
-```
 ---
 
 ### Access the Application
